@@ -25,5 +25,5 @@ export default async function workspaceContext(req, res, next) {
 }
 
 export function workspaceFilter(req) {
-  return req.workspaceId ? { workspace: req.workspaceId } : { workspace: { $exists: false } };
+  return req.workspaceId ? { workspace: req.workspaceId } : {};
 }
