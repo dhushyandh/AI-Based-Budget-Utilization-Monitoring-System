@@ -2,13 +2,14 @@ import { Router } from 'express';
 import Budget from '../models/Budget.js';
 import Expense from '../models/Expense.js';
 import auth from '../middleware/auth.js';
+import workspaceContext, { workspaceFilter } from '../middleware/workspaceContext.js';
 import mongoose from 'mongoose';
-const router=Router();router.use(auth);
+const router=Router();router.use(auth, workspaceContext);
 router.get('/summary',async(req,res,next)=>{try{
- const [budgets,expenses]=await Promise.all([Budget.find({user:req.userId}).lean(),Expense.find({user:req.userId}).populate('budget','title allocatedAmount').sort({date:-1}).limit(8).lean()]);
+ const [budgets,expenses]=await Promise.all([Budget.find({user:req.userId,...workspaceFilter(req)}).lean(),Expense.find({user:req.userId,...workspaceFilter(req)}).populate('budget','title allocatedAmount').sort({date:-1}).limit(8).lean()]);
  const allocated=budgets.reduce((s,b)=>s+b.allocatedAmount,0);
  const userObjectId = new mongoose.Types.ObjectId(req.userId);
- const spent=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:null,total:{$sum:'$amount'}}}]);
+ const spent=await Expense.aggregate([{$match:{user:userObjectId,...(req.workspaceId?{workspace:req.workspaceId}:{})}},{$group:{_id:null,total:{$sum:'$amount'}}}]);
  const totalSpent=spent[0]?.total||0;
  const category=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$category',total:{$sum:'$amount'}}},{$sort:{total:-1}}]);
  const perBudget=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$budget',spent:{$sum:'$amount'}}}]);
