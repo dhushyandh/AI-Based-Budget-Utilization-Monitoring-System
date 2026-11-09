@@ -24,6 +24,6 @@ router.post('/login', async (req,res,next) => {
   } catch(e){next(e)}
 });
 router.get('/me',auth,async(req,res,next)=>{
-  try { const u=await User.findById(req.userId).select('name email'); if(!u)return res.status(404).json({message:'User not found'}); res.json({user:{id:u._id,name:u.name,email:u.email}}); } catch(e){next(e)}
+  try { const u=await User.findById(req.userId).select('name email phone avatarUrl onboardingCompleted createdAt'); if(!u)return res.status(404).json({message:'User not found'}); res.json({user:{id:u._id,name:u.name,email:u.email,phone:u.phone,avatarUrl:u.avatarUrl,onboardingCompleted:u.onboardingCompleted,createdAt:u.createdAt}}); } catch(e){next(e)}
 });
 export default router;

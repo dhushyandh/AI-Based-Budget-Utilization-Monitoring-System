@@ -1,0 +1,13 @@
+import { useEffect, useState } from 'react';
+import { Save, UserRound } from 'lucide-react';
+import api from '../../lib/api.js';
+import { useAuth } from '../auth/AuthContext.jsx';
+
+export default function ProfilePage(){
+ const {user}=useAuth();const [form,setForm]=useState({name:'',phone:'',avatarUrl:''}),[email,setEmail]=useState(''),[saving,setSaving]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState('');
+ useEffect(()=>{api.get('/profile').then(({data})=>{const u=data.user;setForm({name:u.name||'',phone:u.phone||'',avatarUrl:u.avatarUrl||''});setEmail(u.email||'');}).catch(e=>setError(e.response?.data?.message||'Unable to load profile.'));},[]);
+ async function save(e){e.preventDefault();setSaving(true);setError('');setNotice('');try{const {data}=await api.patch('/profile',form);localStorage.setItem('budget_user',JSON.stringify(data.user));setNotice('Profile updated successfully.');}catch(e){setError(e.response?.data?.message||'Unable to save profile.');}finally{setSaving(false);}}
+ return <div className="page-container-inner"><div className="page-header"><div><span className="eyebrow">ACCOUNT</span><h1>Your profile</h1><p>Manage the personal details shown to your workspace teammates.</p></div></div>{error&&<div className="notice notice-danger">{error}</div>}{notice&&<div className="notice notice-success">{notice}</div>}
+ <section className="surface workspace-panel"><div className="surface-heading"><div><span className="surface-kicker">PERSONAL INFORMATION</span><h2>Profile details</h2><p>Your email address is used for sign-in and invitations.</p></div><span className="surface-icon"><UserRound size={20}/></span></div>
+ <form className="form-stack" onSubmit={save}><label>Full name<input required minLength="2" maxLength="80" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label><label>Email address<input value={email} disabled readOnly/></label><label>Phone number<input type="tel" maxLength="20" value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} placeholder="+91 98765 43210"/></label><label>Avatar image URL<input type="url" value={form.avatarUrl} onChange={e=>setForm({...form,avatarUrl:e.target.value})} placeholder="https://…"/></label><div className="modal-actions"><button className="btn-primary" disabled={saving}><Save size={15}/>{saving?'Saving…':'Save profile'}</button></div></form></section></div>;
+}
