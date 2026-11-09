@@ -5,11 +5,15 @@
   "installCommand": "npm ci --prefix client",
   "framework": "vite",
   "functions": {
-    "api/[...path].js": {
+    "api/index.js": {
       "maxDuration": 30
     }
   },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index?path=:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
