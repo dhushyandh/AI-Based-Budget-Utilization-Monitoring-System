@@ -11,13 +11,58 @@ import expenseRoutes from './routes/expenses.js';
 import dashboardRoutes from './routes/dashboard.js';
 
 const app = express();
-app.use(helmet());
-app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+app.set('trust proxy', 1);
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+if (process.env.CLIENT_ORIGIN) {
+  app.use(cors({ origin: process.env.CLIENT_ORIGIN.split(',').map(value => value.trim()), credentials: false }));
+}
 app.use(express.json({ limit: '1mb' }));
-app.use(morgan('dev'));
-app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }), authRoutes);
-app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 300 }));
-app.get('/api/health', (_req, res) => res.json({ status: 'ok', service: 'budget-monitor-api' }));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+app.get('/api/health', (_req, res) => res.status(200).json({
+  status: 'ok',
+  service: 'budget-monitor-api',
+  database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+}));
+
+let databaseConnection;
+async function connectDatabase() {
+  if (mongoose.connection.readyState === 1) return mongoose.connection;
+  if (!process.env.MONGO_URI) {
+    const error = new Error('Database is not configured. Set MONGO_URI in the deployment environment.');
+    error.status = 503;
+    throw error;
+  }
+  if (!databaseConnection) {
+    databaseConnection = mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 10,
+      minPoolSize: 0
+    }).catch(error => {
+      databaseConnection = undefined;
+      throw error;
+    });
+  }
+  return databaseConnection;
+}
+
+app.use('/api', async (_req, _res, next) => {
+  try {
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+      const error = new Error('Authentication service is not configured.');
+      error.status = 503;
+      throw error;
+    }
+    await connectDatabase();
+    next();
+  } catch (error) {
+    console.error('API initialization failed:', error.message);
+    next(error.status ? error : Object.assign(new Error('Database connection unavailable.'), { status: 503 }));
+  }
+});
+
+app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-7', legacyHeaders: false }), authRoutes);
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/dashboard', dashboardRoutes);
@@ -28,11 +73,11 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ message: err.status && err.status < 500 ? err.message : 'Internal server error' });
 });
 
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  console.error('JWT_SECRET must be set to a random value of at least 32 characters.');
-  process.exit(1);
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 5000;
+  connectDatabase()
+    .then(() => app.listen(port, () => console.log(`API running on port ${port}`)))
+    .catch(error => { console.error('MongoDB connection failed:', error.message); process.exit(1); });
 }
-const port = process.env.PORT || 5000;
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => app.listen(port, () => console.log(`API running at http://localhost:${port}`)))
-  .catch(err => { console.error('MongoDB connection failed:', err.message); process.exit(1); });
+
+export default app;
