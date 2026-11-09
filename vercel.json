@@ -2,7 +2,7 @@
   "version": 2,
   "buildCommand": "npm run build --prefix client",
   "outputDirectory": "client/dist",
-  "installCommand": "npm ci --prefix client",
+  "installCommand": "npm ci --prefix client && npm ci --prefix server",
   "framework": "vite",
   "functions": {
     "api/index.js": {
