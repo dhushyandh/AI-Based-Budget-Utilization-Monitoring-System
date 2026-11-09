@@ -20,7 +20,7 @@ router.post('/login', async (req,res,next) => {
   try {
     const user = await User.findOne({email:String(req.body.email||'').toLowerCase().trim()});
     if (!user || !(await bcrypt.compare(req.body.password||'',user.passwordHash))) return res.status(401).json({message:'Invalid email or password'});
-    res.json({token:issue(user),user:{id:user._id,name:user.name,email:user.email}});
+    res.json({token:issue(user),user:{id:user._id,name:user.name,email:user.email,phone:user.phone,avatarUrl:user.avatarUrl,onboardingCompleted:user.onboardingCompleted}});
   } catch(e){next(e)}
 });
 router.get('/me',auth,async(req,res,next)=>{
