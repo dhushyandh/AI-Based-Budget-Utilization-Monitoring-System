@@ -1,10 +1,10 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { Bell, ChevronDown, LayoutDashboard, LogOut, Menu, ReceiptText, Settings2, Wallet, WalletCards, X, ChartNoAxesCombined } from 'lucide-react';
+import { Bell, UserCircle, ChevronDown, LayoutDashboard, LogOut, Menu, ReceiptText, Settings2, Wallet, WalletCards, X, ChartNoAxesCombined } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import api from '../lib/api.js';
 import { useAuth } from '../features/auth/AuthContext.jsx';
 import { initials } from '../lib/format.js';
-const links=[['Overview','/',LayoutDashboard],['Budgets','/budgets',Wallet],['Transactions','/expenses',ReceiptText],['Reports','/reports',ChartNoAxesCombined],['Approvals','/approvals',Bell],['People & access','/settings',Settings2]];
+const links=[['Overview','/',LayoutDashboard],['Budgets','/budgets',Wallet],['Transactions','/expenses',ReceiptText],['Reports','/reports',ChartNoAxesCombined],['Approvals','/approvals',Bell],['Profile','/profile',UserCircle],['People & access','/settings',Settings2]];
 export default function WorkspaceLayout() {
  const {user,signOut}=useAuth(); const [mobile,setMobile]=useState(false); const location=useLocation();
  const [workspaces,setWorkspaces]=useState([]); const [workspaceReady,setWorkspaceReady]=useState(false); const [workspaceId,setWorkspaceId]=useState(localStorage.getItem('budget_workspace_id')||'');
