@@ -1,0 +1,26 @@
+import { Router } from 'express';
+import Budget from '../models/Budget.js';
+import Expense from '../models/Expense.js';
+import auth from '../middleware/auth.js';
+import mongoose from 'mongoose';
+const router=Router();router.use(auth);
+router.get('/summary',async(req,res,next)=>{try{
+ const [budgets,expenses]=await Promise.all([Budget.find({user:req.userId}).lean(),Expense.find({user:req.userId}).populate('budget','title allocatedAmount').sort({date:-1}).limit(8).lean()]);
+ const allocated=budgets.reduce((s,b)=>s+b.allocatedAmount,0);
+ const userObjectId = new mongoose.Types.ObjectId(req.userId);
+ const spent=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:null,total:{$sum:'$amount'}}}]);
+ const totalSpent=spent[0]?.total||0;
+ const category=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$category',total:{$sum:'$amount'}}},{$sort:{total:-1}}]);
+ const perBudget=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$budget',spent:{$sum:'$amount'}}}]);
+ const spentMap=new Map(perBudget.map(x=>[String(x._id),x.spent]));
+ const budgetStats=budgets.map(b=>{const used=spentMap.get(String(b._id))||0;return {...b,spent:used,remaining:b.allocatedAmount-used,utilization:b.allocatedAmount?Math.round(used/b.allocatedAmount*1000)/10:0}});
+ const utilization=allocated?Math.round(totalSpent/allocated*1000)/10:0;
+ const insights=[];
+ if(!budgets.length)insights.push({level:'info',title:'Start by creating a budget',detail:'Add your first budget to begin tracking utilization.'});
+ if(utilization>=100)insights.push({level:'danger',title:'Overall budget exceeded',detail:`Spending is ${utilization}% of the total allocation.`});
+ else if(utilization>=80)insights.push({level:'warning',title:'High budget utilization',detail:`You have used ${utilization}% of the total allocation.`});
+ else if(budgets.length)insights.push({level:'success',title:'Utilization is within the planned total',detail:`Overall utilization is ${utilization}%. Keep monitoring new expenses.`});
+ budgetStats.filter(b=>b.utilization>=90).forEach(b=>insights.push({level:'warning',title:`${b.title} is nearly exhausted`,detail:`${b.utilization}% used; remaining balance ${b.remaining.toFixed(2)}.`}));
+ res.json({totals:{budgetCount:budgets.length,allocated,totalSpent,remaining:allocated-totalSpent,utilization},category,budgets:budgetStats,expenses,insights});
+}catch(e){next(e)}});
+export default router;
