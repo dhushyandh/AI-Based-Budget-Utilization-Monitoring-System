@@ -4,6 +4,8 @@ A full-stack budget and expense monitoring application built with React, Vite, E
 
 ## Product capabilities
 - Secure registration and login using bcrypt password hashing and JWT sessions.
+- Guided onboarding for personal or organization workspaces.
+- Editable user profiles, international phone validation, and Cloudinary-hosted profile photos.
 - User-scoped budget and expense management.
 - Budget allocation, utilization, and remaining-balance calculations.
 - Dashboard summaries, category breakdowns, and budget performance charts.
@@ -64,7 +66,7 @@ The client sends the active workspace in the `X-Workspace-Id` header. The API ve
 - `POST /api/workspaces` — create an organization workspace (creator becomes owner).
 - `PATCH /api/workspaces/:id` — owner can rename a workspace or change its ISO currency code.
 
-This phase establishes workspace boundaries. Invitations, membership administration, approval workflows, commitments, and audit events are subsequent phases and are not represented as implemented yet.
+Workspace boundaries, collaboration, budget approvals, profile management, and onboarding are implemented. Profile photo uploads require the server-side Cloudinary environment variables listed in DEPLOYMENT_GUIDE.md.
 
 ### Collaboration and access control (Phase 2)
 - Workspace owners and admins can create, list, and revoke invitations. Invite tokens are generated using cryptographic randomness; only a SHA-256 hash is stored.
