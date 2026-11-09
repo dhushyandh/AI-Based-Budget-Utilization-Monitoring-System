@@ -13,6 +13,7 @@ Configure these server-side variables on the API host:
 - `MONGO_URI`: MongoDB Atlas connection string.
 - `JWT_SECRET`: random secret of at least 32 characters.
 - `CLIENT_ORIGIN`: exact deployed frontend origin.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: server-only credentials for profile image uploads. Create these in the Cloudinary dashboard; never add them to `VITE_*` variables or commit real values.
 - `PORT`: supplied by the hosting platform (if required).
 
 ## MongoDB Atlas
