@@ -19,11 +19,26 @@ if (process.env.CLIENT_ORIGIN) {
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-app.get('/api/health', (_req, res) => res.status(200).json({
-  status: 'ok',
-  service: 'budget-monitor-api',
-  database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-}));
+app.get('/api/health', async (_req, res) => {
+  try {
+    await connectDatabase();
+    return res.status(200).json({
+      status: 'ok',
+      service: 'budget-monitor-api',
+      database: 'connected'
+    });
+  } catch (error) {
+    console.error('Health check database connection failed:', error.message);
+    return res.status(503).json({
+      status: 'error',
+      service: 'budget-monitor-api',
+      database: 'disconnected',
+      reason: !process.env.MONGO_URI
+        ? 'MONGO_URI is not configured'
+        : 'MongoDB connection failed'
+    });
+  }
+});
 
 let databaseConnection;
 async function connectDatabase() {
