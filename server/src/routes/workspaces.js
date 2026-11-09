@@ -63,7 +63,10 @@ router.post('/:id/accept-invitation', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.use('/:id', workspaceContext);
+router.use('/:id', workspaceContext, (req, res, next) => {
+  if (String(req.workspaceId) !== req.params.id) return res.status(400).json({ message: 'Workspace ID does not match the selected workspace' });
+  next();
+});
 router.get('/:id/members', async (req, res, next) => {
   try {
     if (String(req.workspaceId) !== req.params.id) return res.status(400).json({ message: 'Select this workspace to manage its members' });
