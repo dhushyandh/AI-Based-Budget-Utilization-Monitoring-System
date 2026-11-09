@@ -86,3 +86,8 @@ server/
 - Role policy: owner/admin manage invitations; owner/admin can manage members within their permitted role scope; owner-only workspace profile update; budget_manager/admin/owner can mutate budgets; member/approver/budget_manager/admin/owner can mutate expenses; viewer is read-only.
 - Workspace-scoped management routes verify that the URL workspace ID matches the membership-validated X-Workspace-Id context.
 - Fine-grained approval execution, audit history, email delivery, ownership transfer, and member UI remain future work.
+
+## Collaboration UI
+- The authenticated app exposes a People & access route for workspace membership and invitation management.
+- Invitation URLs use `/invite/:workspaceId?token=...`; acceptance requires an authenticated session whose account email matches the invitation.
+- The UI clearly describes manual invitation-link delivery until an email provider is integrated.

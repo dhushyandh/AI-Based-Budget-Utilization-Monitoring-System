@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '../lib/api.js';
 import { useAuth } from '../features/auth/AuthContext.jsx';
 import { initials } from '../lib/format.js';
-const links=[['Overview','/',LayoutDashboard],['Budgets','/budgets',Wallet],['Transactions','/expenses',ReceiptText],['Reports','/reports',ChartNoAxesCombined]];
+const links=[['Overview','/',LayoutDashboard],['Budgets','/budgets',Wallet],['Transactions','/expenses',ReceiptText],['Reports','/reports',ChartNoAxesCombined],['People & access','/settings',Settings2]];
 export default function WorkspaceLayout() {
  const {user,signOut}=useAuth(); const [mobile,setMobile]=useState(false); const location=useLocation();
  const [workspaces,setWorkspaces]=useState([]); const [workspaceReady,setWorkspaceReady]=useState(false); const [workspaceId,setWorkspaceId]=useState(localStorage.getItem('budget_workspace_id')||'');
