@@ -33,3 +33,28 @@ export function workspaceFilter(req) {
 export function tenantFilter(req) {
   return req.workspaceId ? { workspace: req.workspaceId } : { user: req.userId };
 }
+
+const permissions = {
+  owner: ['workspace:manage', 'members:manage', 'budgets:write', 'expenses:write'],
+  admin: ['members:manage', 'budgets:write', 'expenses:write'],
+  budget_manager: ['budgets:write', 'expenses:write'],
+  approver: ['expenses:write'],
+  member: ['expenses:write'],
+  viewer: []
+};
+
+export function requireWorkspacePermission(permission) {
+  return (req, res, next) => {
+    if (!req.workspaceId) return next();
+    if (!permissions[req.workspaceRole]?.includes(permission)) {
+      return res.status(403).json({ message: 'Your workspace role does not allow this action' });
+    }
+    next();
+  };
+}
+
+export function canManageMember(actorRole, targetRole, nextRole) {
+  if (actorRole === 'owner') return targetRole !== 'owner' && nextRole !== 'owner';
+  if (actorRole === 'admin') return ['member', 'viewer', 'approver', 'budget_manager'].includes(targetRole) && ['member', 'viewer', 'approver', 'budget_manager'].includes(nextRole);
+  return false;
+}
