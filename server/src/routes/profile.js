@@ -29,7 +29,7 @@ router.patch('/', async (req, res, next) => {
     }
     if (req.body.avatarUrl !== undefined) {
       const avatarUrl = String(req.body.avatarUrl).trim();
-      if (avatarUrl && (!/^https:\\/\\//i.test(avatarUrl) || avatarUrl.length > 500)) return res.status(400).json({ message: 'Avatar must be a secure https URL' });
+      if (avatarUrl && (!/^https:/i.test(avatarUrl) || avatarUrl.length > 500)) return res.status(400).json({ message: 'Avatar must be a secure https URL' });
       user.avatarUrl = avatarUrl;
     }
     if (req.body.onboardingCompleted === true) user.onboardingCompleted = true;
