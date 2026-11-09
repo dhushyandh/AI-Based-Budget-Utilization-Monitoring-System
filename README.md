@@ -73,3 +73,6 @@ This phase establishes workspace boundaries. Invitations, membership administrat
 - Owners/admins can list members; role changes and removal are restricted so admins cannot modify owners or other admins. Ownership cannot be transferred or removed through these endpoints.
 - Workspace roles now gate writes: viewers are read-only; members and approvers can write expenses; budget managers, admins, and owners can write budgets and expenses.
 - New endpoints: GET /api/workspaces/:id/members, POST|GET /api/workspaces/:id/invitations, DELETE /api/workspaces/:id/invitations/:invitationId, PATCH|DELETE /api/workspaces/:id/members/:userId, and authenticated POST /api/workspaces/:id/accept-invitation with { token }.
+
+### Workspace collaboration UI
+The authenticated workspace sidebar includes a People & access screen for owners and admins. It lists workspace members, supports permitted role changes and removals, creates invitation links, and lists/revokes pending invitations. Invitees sign in with the invited email and open the invitation URL to accept. No email delivery provider is configured; invitation links must be shared securely by the workspace administrator.
