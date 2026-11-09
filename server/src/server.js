@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import budgetRoutes from './routes/budgets.js';
 import expenseRoutes from './routes/expenses.js';
 import dashboardRoutes from './routes/dashboard.js';
+import workspaceRoutes from './routes/workspaces.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -76,6 +77,7 @@ app.use('/api', async (_req, _res, next) => {
   }
 });
 
+app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100, standardHeaders: 'draft-7', legacyHeaders: false }), authRoutes);
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
 app.use('/api/budgets', budgetRoutes);
