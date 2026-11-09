@@ -4,6 +4,11 @@
   "outputDirectory": "client/dist",
   "installCommand": "npm ci --prefix client",
   "framework": "vite",
+  "functions": {
+    "api/[...path].js": {
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
