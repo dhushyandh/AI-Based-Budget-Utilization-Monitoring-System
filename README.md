@@ -52,3 +52,16 @@ Authenticated endpoints require `Authorization: Bearer <token>`.
 
 ## Deployment
 The Vercel project serves the frontend only. Deploy the Express API to a Node-compatible host and connect MongoDB Atlas. See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md).
+
+
+## Workspaces (feature branch)
+The multi-workspace foundation supports personal workspaces and organization workspaces. Workspace membership is stored with explicit roles (`owner`, `admin`, `budget_manager`, `approver`, `member`, `viewer`). The first authenticated workspace-list request provisions a personal workspace and attaches legacy budgets and expenses to it in place, preserving existing document IDs and financial data.
+
+The client sends the active workspace in the `X-Workspace-Id` header. The API verifies membership before workspace-scoped financial reads and writes. Existing clients that omit the header retain legacy user-scoped behavior during rollout.
+
+### Workspace API
+- `GET /api/workspaces` — list memberships and ensure a personal workspace exists.
+- `POST /api/workspaces` — create an organization workspace (creator becomes owner).
+- `PATCH /api/workspaces/:id` — owner can rename a workspace or change its ISO currency code.
+
+This phase establishes workspace boundaries. Invitations, membership administration, approval workflows, commitments, and audit events are subsequent phases and are not represented as implemented yet.

@@ -71,3 +71,11 @@ server/
 - A Node-compatible service runs the Express API.
 - MongoDB Atlas stores application data.
 - Secrets (MONGO_URI, JWT_SECRET) are server-only environment variables. Never put secrets in VITE_* variables or commit .env files.
+
+
+## Multi-workspace tenancy (Phase 1)
+- A Workspace is either `personal` or `organization`, has an owner, currency, status, and explicit member-role records.
+- A user may belong to multiple workspaces. The active workspace is sent as `X-Workspace-Id` and resolved by membership-checking middleware.
+- Budget and Expense documents gain an optional `workspace` reference and compound indexes. Existing records are adopted in place into the user's personal workspace on first workspace-list request; no document IDs or amounts are rewritten.
+- Workspace-aware queries include the selected workspace. Requests without the header retain the legacy user-scoped query behavior to support older clients during rollout.
+- Roles are persisted now; this phase only grants workspace creation and owner-only workspace profile edits. Fine-grained role authorization and invitations are planned follow-up work.
