@@ -23,5 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+<<<<<<< HEAD
       - run: |
           find server/src -name '*.js' -print0 | xargs -0 -n1 node --check
+=======
+      - run: find server/src -name '*.js' -print0 | xargs -0 -n1 node --check
+>>>>>>> 62212d2b24da30063f89cc48fa2746ba4beb69f8
