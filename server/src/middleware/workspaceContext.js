@@ -27,3 +27,9 @@ export default async function workspaceContext(req, res, next) {
 export function workspaceFilter(req) {
   return req.workspaceId ? { workspace: req.workspaceId } : {};
 }
+
+// In a selected shared workspace, all active members operate on the shared
+// workspace ledger. Without a workspace header, preserve legacy user scoping.
+export function tenantFilter(req) {
+  return req.workspaceId ? { workspace: req.workspaceId } : { user: req.userId };
+}
