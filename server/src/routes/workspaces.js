@@ -47,6 +47,22 @@ router.post('/', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+router.post('/:id/accept-invitation', async (req, res, next) => {
+  try {
+    const token = String(req.body.token || '');
+    if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ message: 'Invalid invitation token' });
+    const user = await User.findById(req.userId).select('email');
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const invitation = await WorkspaceInvitation.findOne({ workspace: req.params.id, email: user.email, tokenHash, acceptedAt: null, revokedAt: null, expiresAt: { $gt: new Date() } }).select('+tokenHash');
+    if (!invitation) return res.status(404).json({ message: 'Invitation is invalid, expired, revoked, or belongs to another email' });
+    const workspace = await Workspace.findOneAndUpdate({ _id: req.params.id, status: 'active', 'members.user': { $ne: req.userId } }, { $push: { members: { user: req.userId, role: invitation.role } } }, { new: true });
+    if (!workspace) return res.status(409).json({ message: 'You are already a member or the workspace is unavailable' });
+    invitation.acceptedAt = new Date();
+    await invitation.save();
+    res.json({ message: 'Invitation accepted', workspace: { id: String(workspace._id), name: workspace.name, role: invitation.role } });
+  } catch (e) { next(e); }
+});
+
 router.use('/:id', workspaceContext);
 router.get('/:id/members', async (req, res, next) => {
   try {
@@ -140,20 +156,6 @@ router.patch('/:id', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.post('/:id/accept-invitation', async (req, res, next) => {
-  try {
-    const token = String(req.body.token || '');
-    if (!/^[a-f0-9]{64}$/i.test(token)) return res.status(400).json({ message: 'Invalid invitation token' });
-    const user = await User.findById(req.userId).select('email');
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const invitation = await WorkspaceInvitation.findOne({ workspace: req.params.id, email: user.email, tokenHash, acceptedAt: null, revokedAt: null, expiresAt: { $gt: new Date() } }).select('+tokenHash');
-    if (!invitation) return res.status(404).json({ message: 'Invitation is invalid, expired, revoked, or belongs to another email' });
-    const workspace = await Workspace.findOneAndUpdate({ _id: req.params.id, status: 'active', 'members.user': { $ne: req.userId } }, { $push: { members: { user: req.userId, role: invitation.role } } }, { new: true });
-    if (!workspace) return res.status(409).json({ message: 'You are already a member or the workspace is unavailable' });
-    invitation.acceptedAt = new Date();
-    await invitation.save();
-    res.json({ message: 'Invitation accepted', workspace: { id: String(workspace._id), name: workspace.name, role: invitation.role } });
-  } catch (e) { next(e); }
-});
+
 
 export default router;
