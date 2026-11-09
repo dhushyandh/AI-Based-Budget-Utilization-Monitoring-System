@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema({
   passwordHash: { type: String, required: true },
   phone: { type: String, trim: true, maxlength: 20, default: '' },
   avatarUrl: { type: String, trim: true, maxlength: 500, default: '' },
+  avatarPublicId: { type: String, trim: true, default: '' },
   onboardingCompleted: { type: Boolean, default: false }
 }, { timestamps: true });
 export default mongoose.model('User', userSchema);
