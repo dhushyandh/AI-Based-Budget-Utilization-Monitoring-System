@@ -13,7 +13,7 @@ router.post('/register', async (req,res,next) => {
     const normalized = email.toLowerCase().trim();
     if (await User.findOne({email:normalized})) return res.status(409).json({message:'An account with this email already exists'});
     const user = await User.create({name, email:normalized, passwordHash:await bcrypt.hash(password,12)});
-    res.status(201).json({token:issue(user), user:{id:user._id,name:user.name,email:user.email}});
+    res.status(201).json({token:issue(user), user:{id:user._id,name:user.name,email:user.email,phone:user.phone,avatarUrl:user.avatarUrl,onboardingCompleted:user.onboardingCompleted}});
   } catch(e){next(e)}
 });
 router.post('/login', async (req,res,next) => {
