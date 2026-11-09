@@ -1,32 +1,29 @@
 # Deployment Guide
 
-## Frontend on Vercel
-<<<<<<< HEAD
-This repository is configured with `vercel.json` to build the Vite app from `client/` and publish `client/dist`. Set `VITE_API_URL` in the Vercel project to the public API base URL ending in `/api`, then redeploy.
+## Recommended topology
+- **Frontend:** Vercel static deployment from `client/dist`.
+- **API:** Node-compatible host running `server/src/server.js` (Render, Railway, or equivalent).
+- **Database:** MongoDB Atlas.
 
-## Backend
-The Express + MongoDB API is a long-running Node service. Deploy `server/` to a Node-compatible host (for example Render or Railway) with:
-- `MONGO_URI`: MongoDB Atlas connection string
-- `JWT_SECRET`: random secret with at least 32 characters
-- `CLIENT_ORIGIN`: deployed frontend origin, such as `https://budget-utilization-monitor.vercel.app`
-- `PORT`: supplied by the host
+## Frontend environment
+Set `VITE_API_URL` in the Vercel project to the deployed API base URL ending in `/api`, for example `https://your-api.example.com/api`. Redeploy after changing environment variables.
 
-The API health endpoint is `/api/health`. Configure Atlas network access to permit the chosen host, and create a database user with least privilege. Never commit `.env` files or expose secrets in Vite variables.
+## Backend environment
+Configure these server-side variables on the API host:
+- `MONGO_URI`: MongoDB Atlas connection string.
+- `JWT_SECRET`: random secret of at least 32 characters.
+- `CLIENT_ORIGIN`: exact deployed frontend origin.
+- `PORT`: supplied by the hosting platform (if required).
 
-## Important
-Vercel deploys the frontend only in this configuration. The API will not function until the backend and MongoDB are configured and deployed, and the frontend's `VITE_API_URL` points to that API.
-=======
-The project is configured with `vercel.json` to build the Vite app from `client/` and publish `client/dist`. Set `VITE_API_URL` in the Vercel project to the public API base URL ending in `/api`, then redeploy.
+## MongoDB Atlas
+Create a dedicated database user with least-privilege access. Restrict network access to the API host where supported. Do not expose database credentials in frontend variables.
 
-## Backend
-The Express + MongoDB API is a long-running Node service. Deploy `server/` to a Node-compatible host with:
-- `MONGO_URI`: MongoDB Atlas connection string
-- `JWT_SECRET`: random secret with at least 32 characters
-- `CLIENT_ORIGIN`: deployed frontend origin
-- `PORT`: supplied by the host
+## Smoke checks
+1. Open `/api/health` on the deployed API and expect `{ "status": "ok", "service": "budget-monitor-api" }`.
+2. Register a test account.
+3. Create a budget and add an expense.
+4. Verify the dashboard totals update.
+5. Verify a second account cannot access the first account's budgets or expenses.
 
-The API health endpoint is `/api/health`. Configure MongoDB Atlas network access for the chosen host and create a least-privilege database user.
-
-## Important
-Vercel deploys the frontend only in this configuration. The API will not function until the backend and MongoDB are configured and deployed, and the frontend's `VITE_API_URL` points to that API. Never commit `.env` files or expose secrets in Vite variables.
->>>>>>> 62212d2b24da30063f89cc48fa2746ba4beb69f8
+## Current deployment boundary
+The connected Vercel project is configured to build and publish the React frontend. It does not host the Express API in the current topology. The application is not fully production-functional until the API and MongoDB environment are configured and the frontend points to that API.
