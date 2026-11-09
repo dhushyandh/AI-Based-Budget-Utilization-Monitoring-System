@@ -12,8 +12,9 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
   const signIn = data => { localStorage.setItem('budget_token', data.token); localStorage.setItem('budget_user', JSON.stringify(data.user)); setToken(data.token); setUser(data.user); };
+  const updateUser = nextUser => { setUser(nextUser); localStorage.setItem('budget_user', JSON.stringify(nextUser)); };
   const signOut = () => { localStorage.removeItem('budget_token'); localStorage.removeItem('budget_user'); setToken(null); setUser(null); };
-  const value = useMemo(() => ({ token, user, loading, signIn, signOut }), [token, user, loading]);
+  const value = useMemo(() => ({ token, user, loading, signIn, signOut, updateUser }), [token, user, loading]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export const useAuth = () => useContext(AuthContext);
