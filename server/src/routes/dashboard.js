@@ -11,8 +11,8 @@ router.get('/summary',async(req,res,next)=>{try{
  const userObjectId = new mongoose.Types.ObjectId(req.userId);
  const spent=await Expense.aggregate([{$match:{user:userObjectId,...(req.workspaceId?{workspace:req.workspaceId}:{})}},{$group:{_id:null,total:{$sum:'$amount'}}}]);
  const totalSpent=spent[0]?.total||0;
- const category=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$category',total:{$sum:'$amount'}}},{$sort:{total:-1}}]);
- const perBudget=await Expense.aggregate([{$match:{user:userObjectId}},{$group:{_id:'$budget',spent:{$sum:'$amount'}}}]);
+ const category=await Expense.aggregate([{$match:{user:userObjectId,...(req.workspaceId?{workspace:req.workspaceId}:{})}},{$group:{_id:'$category',total:{$sum:'$amount'}}},{$sort:{total:-1}}]);
+ const perBudget=await Expense.aggregate([{$match:{user:userObjectId,...(req.workspaceId?{workspace:req.workspaceId}:{})}},{$group:{_id:'$budget',spent:{$sum:'$amount'}}}]);
  const spentMap=new Map(perBudget.map(x=>[String(x._id),x.spent]));
  const budgetStats=budgets.map(b=>{const used=spentMap.get(String(b._id))||0;return {...b,spent:used,remaining:b.allocatedAmount-used,utilization:b.allocatedAmount?Math.round(used/b.allocatedAmount*1000)/10:0}});
  const utilization=allocated?Math.round(totalSpent/allocated*1000)/10:0;
