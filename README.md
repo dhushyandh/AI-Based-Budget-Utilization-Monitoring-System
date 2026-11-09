@@ -65,3 +65,11 @@ The client sends the active workspace in the `X-Workspace-Id` header. The API ve
 - `PATCH /api/workspaces/:id` — owner can rename a workspace or change its ISO currency code.
 
 This phase establishes workspace boundaries. Invitations, membership administration, approval workflows, commitments, and audit events are subsequent phases and are not represented as implemented yet.
+
+### Collaboration and access control (Phase 2)
+- Workspace owners and admins can create, list, and revoke invitations. Invite tokens are generated using cryptographic randomness; only a SHA-256 hash is stored.
+- Invitations are bound to the invited email, expire after seven days, and can only be accepted by an authenticated account with that same email.
+- Invitation delivery is currently manual: the create-invitation response returns a one-time token. No email provider is configured, so the API does not claim to send email.
+- Owners/admins can list members; role changes and removal are restricted so admins cannot modify owners or other admins. Ownership cannot be transferred or removed through these endpoints.
+- Workspace roles now gate writes: viewers are read-only; members and approvers can write expenses; budget managers, admins, and owners can write budgets and expenses.
+- New endpoints: GET /api/workspaces/:id/members, POST|GET /api/workspaces/:id/invitations, DELETE /api/workspaces/:id/invitations/:invitationId, PATCH|DELETE /api/workspaces/:id/members/:userId, and authenticated POST /api/workspaces/:id/accept-invitation with { token }.

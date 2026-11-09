@@ -79,3 +79,10 @@ server/
 - Budget and Expense documents gain an optional `workspace` reference and compound indexes. Existing records are adopted in place into the user's personal workspace on first workspace-list request; no document IDs or amounts are rewritten.
 - Workspace-aware queries include the selected workspace. Requests without the header retain the legacy user-scoped query behavior to support older clients during rollout.
 - Roles are persisted now; this phase only grants workspace creation and owner-only workspace profile edits. Fine-grained role authorization and invitations are planned follow-up work.
+
+## Collaboration and authorization (Phase 2)
+- Workspace invitations store only a SHA-256 token hash, normalized email, assigned role, inviter, expiry, and acceptance/revocation timestamps. Raw tokens are returned once by the API for manual delivery; email delivery is not configured.
+- Acceptance requires an authenticated user whose normalized account email matches the invitation email, a valid unexpired token, and active workspace membership availability.
+- Role policy: owner/admin manage invitations; owner/admin can manage members within their permitted role scope; owner-only workspace profile update; budget_manager/admin/owner can mutate budgets; member/approver/budget_manager/admin/owner can mutate expenses; viewer is read-only.
+- Workspace-scoped management routes verify that the URL workspace ID matches the membership-validated X-Workspace-Id context.
+- Fine-grained approval execution, audit history, email delivery, ownership transfer, and member UI remain future work.
