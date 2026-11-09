@@ -1,41 +1,14 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import auth from '../middleware/auth.js';
 import User from '../models/User.js';
-
 const router = Router();
 router.use(auth);
-
-router.get('/', async (req, res, next) => {
-  try {
-    const user = await User.findById(req.userId).select('name email phone avatarUrl onboardingCompleted createdAt');
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    res.json({ user });
-  } catch (error) { next(error); }
-});
-
-router.patch('/', async (req, res, next) => {
-  try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (req.body.name !== undefined) {
-      const name = String(req.body.name).trim();
-      if (name.length < 2 || name.length > 80) return res.status(400).json({ message: 'Name must be between 2 and 80 characters' });
-      user.name = name;
-    }
-    if (req.body.phone !== undefined) {
-      const phone = String(req.body.phone).trim();
-      if (phone && !/^\\+?[0-9 ()-]{7,20}$/.test(phone)) return res.status(400).json({ message: 'Enter a valid phone number' });
-      user.phone = phone;
-    }
-    if (req.body.avatarUrl !== undefined) {
-      const avatarUrl = String(req.body.avatarUrl).trim();
-      if (avatarUrl && (!/^https:/i.test(avatarUrl) || avatarUrl.length > 500)) return res.status(400).json({ message: 'Avatar must be a secure https URL' });
-      user.avatarUrl = avatarUrl;
-    }
-    if (req.body.onboardingCompleted === true) user.onboardingCompleted = true;
-    await user.save();
-    res.json({ user: { id: user._id, name: user.name, email: user.email, phone: user.phone, avatarUrl: user.avatarUrl, onboardingCompleted: user.onboardingCompleted } });
-  } catch (error) { next(error); }
-});
-
+function cloudinaryConfig(){const{CLOUDINARY_CLOUD_NAME:cloud,CLOUDINARY_API_KEY:key,CLOUDINARY_API_SECRET:secret}=process.env;if(!cloud||!key||!secret){const e=new Error('Profile photo storage is not configured yet.');e.status=503;throw e;}return{cloud,key,secret};}
+function signature(params,secret){return crypto.createHash('sha1').update(Object.keys(params).sort().map(k=>k+'='+params[k]).join('&')+secret).digest('hex');}
+async function cloudinaryRequest(path,params,file){const c=cloudinaryConfig(),timestamp=Math.floor(Date.now()/1000),signed={...params,timestamp},form=new FormData();Object.entries(signed).forEach(([k,v])=>form.append(k,String(v)));form.append('api_key',c.key);form.append('signature',signature(signed,c.secret));if(file)form.append('file',new Blob([file.buffer],{type:file.mime}),file.name);const response=await fetch('https://api.cloudinary.com/v1_1/'+c.cloud+'/image/'+path,{method:'POST',body:form});const payload=await response.json();if(!response.ok){const e=new Error(payload.error?.message||'Image storage request failed.');e.status=502;throw e;}return payload;}
+router.get('/',async(req,res,next)=>{try{const user=await User.findById(req.userId).select('name email phone avatarUrl onboardingCompleted createdAt');if(!user)return res.status(404).json({message:'User not found'});res.json({user});}catch(e){next(e);}});
+router.patch('/',async(req,res,next)=>{try{const user=await User.findById(req.userId);if(!user)return res.status(404).json({message:'User not found'});if(req.body.name!==undefined){const name=String(req.body.name).trim();if(name.length<2||name.length>80)return res.status(400).json({message:'Name must be between 2 and 80 characters'});user.name=name;}if(req.body.phone!==undefined){const raw=String(req.body.phone).trim(),phone=raw.replace(/[\s()-]/g,'');if(raw&&!/^\+[1-9]\d{7,14}$/.test(phone))return res.status(400).json({message:'Use an international number with country code, e.g. +919876543210'});user.phone=phone;}if(req.body.onboardingCompleted===true)user.onboardingCompleted=true;await user.save();res.json({user:{id:user._id,name:user.name,email:user.email,phone:user.phone,avatarUrl:user.avatarUrl,onboardingCompleted:user.onboardingCompleted}});}catch(e){next(e);}});
+router.post('/avatar',async(req,res,next)=>{try{const match=String(req.body.image||'').match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);if(!match)return res.status(400).json({message:'Choose a JPG, PNG or WebP image.'});const buffer=Buffer.from(match[2],'base64'),mime=match[1];if(!buffer.length||buffer.length>600*1024)return res.status(413).json({message:'Profile photos must be 600 KB or smaller.'});const valid=mime==='image/jpeg'?buffer[0]===255&&buffer[1]===216:mime==='image/png'?buffer.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])):buffer.subarray(0,4).toString()==='RIFF'&&buffer.subarray(8,12).toString()==='WEBP';if(!valid)return res.status(400).json({message:'The selected file does not match its image format.'});const user=await User.findById(req.userId);if(!user)return res.status(404).json({message:'User not found'});const uploaded=await cloudinaryRequest('upload',{folder:'ledgerly/avatars',public_id:'user_'+String(user._id),overwrite:true,transformation:'c_limit,w_512,h_512,q_auto,f_auto'},{buffer,mime,name:'avatar.'+(mime==='image/jpeg'?'jpg':mime==='image/png'?'png':'webp')});user.avatarUrl=uploaded.secure_url;user.avatarPublicId=uploaded.public_id;await user.save();res.json({user:{id:user._id,name:user.name,email:user.email,phone:user.phone,avatarUrl:user.avatarUrl,onboardingCompleted:user.onboardingCompleted}});}catch(e){next(e);}});
+router.delete('/avatar',async(req,res,next)=>{try{const user=await User.findById(req.userId);if(!user)return res.status(404).json({message:'User not found'});if(user.avatarPublicId)await cloudinaryRequest('destroy',{public_id:user.avatarPublicId});user.avatarUrl='';user.avatarPublicId='';await user.save();res.json({user:{id:user._id,name:user.name,email:user.email,phone:user.phone,avatarUrl:'',onboardingCompleted:user.onboardingCompleted}});}catch(e){next(e);}});
 export default router;
